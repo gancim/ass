@@ -8,6 +8,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
 
 image = Image.open('static/ass.png')
+
+PAGE_CONFIG = {"page_title":"ASS: Automated Screening System", "page_icon":image}
+
+st.set_page_config(**PAGE_CONFIG)
+
 st.image(image, width=100)
 st.header("ASS: Automated Screening System")
 
