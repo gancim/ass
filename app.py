@@ -111,6 +111,9 @@ if click:
 
     if (match >= passThreshold):
         st.balloons()
-        col3.success("Pass!")
+        col3.success("Pass! :thumbsup:")
     else:
-        col3.error("Fail!")
+        col3.error("Fail! :thumbsdown:")
+
+url = "https://github.com/gancim/"
+st.caption("Made with :blue_heart: by [gancim](%s)" % url)
