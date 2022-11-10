@@ -17,6 +17,8 @@ st.image(image, width=100)
 st.header("ASS: Automated Screening System")
 
 st.caption("NLP Based pre-screening check and pattern matching between a job's requirements and the qualifications of a candidate based on their resume.")
+url = "https://github.com/gancim/"
+st.caption("Made with :blue_heart: by [gancim](%s)" % url)
 
 job_description_txt = st.text_area('Job Description', '''Work Responsibilities
 · Design, development, and operation of APIs using Go, PHP, or Java
@@ -114,6 +116,3 @@ if click:
         col3.success("Pass! :thumbsup:")
     else:
         col3.error("Fail! :thumbsdown:")
-
-url = "https://github.com/gancim/"
-st.caption("Made with :blue_heart: by [gancim](%s)" % url)
