@@ -7,6 +7,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
 
+
 image = Image.open('static/ass.png')
 
 PAGE_CONFIG = {"page_title":"ASS: Automated Screening System", "page_icon":image}
@@ -47,13 +48,18 @@ Preferred Requirements
 · Cloud development experience (preferably GCP or AWS)
 · Knowledge of and experience with databases (RDBMS/NoSQL), networks, Linux, monitoring systems, logging, and SLO/SLA
 · Experience contributing to an open-source project
+
+Doc Screening
+· At least 5 years of industry experience working as Backend Software engineer
+· Match with Mercari’s tech stack (Go, PHP, GCP, K8s, SQL databases, etc.)
+· Development and operation in a microservices architecture OR Experience migrating from monolith to MS
+· Experience developing and maintaining the backend systems of large scale products (with millions of users and transactions/RPS)
+· Experience in leading a technical team OR designing the backend architecture
     ''',height=200)
 
-uploadedResume = st.file_uploader("Resume",type="pdf")
+uploadedResumes = st.file_uploader("Resumes",type="pdf", accept_multiple_files=True)
 
 passThreshold = st.slider('Pass Threshold', 0, 100, 50)
-
-click = st.button("Analyze")
 
 # normalization
 def normalize(text):
@@ -78,14 +84,19 @@ except:
     st.write("")
 
 try:
-    global resume
+    global resumes
+    resumes = {}
     all_text = ""
-    with pdfplumber.open(uploadedResume) as pdf:
-        for number, page in enumerate(pdf.pages, 1):
-            text = page.extract_text()
-            all_text += text
+    for uploadedResume in uploadedResumes:
 
-    resume = normalize(all_text)
+        with pdfplumber.open(uploadedResume) as pdf:
+            for number, page in enumerate(pdf.pages, 1):
+                text = page.extract_text()
+                all_text += text
+            resume = normalize(all_text)
+
+        resumes[uploadedResume.name] = resume
+
 except:
     st.write("")
 
@@ -102,17 +113,41 @@ def getResult(JD_txt,resume_txt):
     return match
 
 #button
-if click:
-    match = getResult(job_description,resume)
-    match = round(match)
+if st.button('Analyze'):
+    st.header('Results')
+    csv = []
 
-    st.header('Result')
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Pass Threshold", str(passThreshold) + "%")
-    col2.metric("Matching Percentage", str(match) + "%", str(match - passThreshold) + "%")
+    total_resumes = len(resumes.keys())
+    total_pass = 0
 
-    if (match >= passThreshold):
-        st.balloons()
-        col3.success("Pass! :thumbsup:")
-    else:
-        col3.error("Fail! :thumbsdown:")
+    head1, head2 = st.columns(2)
+    head1.metric("Pass Threshold", str(passThreshold) + "%")
+    head2.metric("Total Resumes", str(total_resumes))
+    st.write("----")
+
+    for resume_name in resumes.keys():
+
+        match = getResult(job_description, resumes[resume_name])
+        match = round(match)
+
+        col1, col2, col3 = st.columns(3)
+        col1.caption(resume_name)
+        col2.metric("Matching Percentage", str(match) + "%", str(match - passThreshold) + "%")
+
+        isPass = match >= passThreshold
+        if (isPass):
+            col3.success("Pass! :thumbsup:")
+            total_pass += 1
+        else:
+            col3.error("Fail! :thumbsdown:")
+        csv.append(resume_name + ", " + str(match) + ", "+ str(match - passThreshold) + ", "+ str(isPass))
+
+    st.write("----")
+    total_pass_percentage = round((total_pass / total_resumes) * 100)
+    tot1, tot2 = st.columns(2)
+    tot1.metric("Pass", str(total_pass), str(total_pass_percentage) + "%")
+    tot2.metric("Fail", str(total_resumes - total_pass), str((total_pass_percentage - 100)) + "%")
+
+    st.write("----")
+    with st.expander("Export"):
+        st.write(csv)
