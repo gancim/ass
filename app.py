@@ -153,3 +153,8 @@ if click:
         st.write("----")
         with st.expander("Export"):
             st.write(csv)
+
+        if (total_pass_percentage >= 100):
+            st.balloons()
+        elif (total_pass_percentage == 0):
+            st.snow()
