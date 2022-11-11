@@ -58,8 +58,9 @@ Doc Screening
     ''',height=200)
 
 uploadedResumes = st.file_uploader("Resumes",type="pdf", accept_multiple_files=True)
-
-passThreshold = st.slider('Pass Threshold', 0, 100, 50)
+url = "https://github.com/gancim/ass/tree/main/static/oshiritantei.png"
+st.caption("Test resume: [Oshiri Tantei](%s)" % url)
+passThreshold = st.slider('Matching Threshold', 0, 100, 50)
 
 # normalization
 def normalize(text):
