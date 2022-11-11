@@ -58,7 +58,7 @@ Doc Screening
     ''',height=200)
 
 uploadedResumes = st.file_uploader("Resumes",type="pdf", accept_multiple_files=True)
-url = "https://github.com/gancim/ass/tree/main/static/oshiritantei.pdf"
+url = "https://github.com/gancim/ass/raw/main/static/oshiritantei.pdf"
 st.caption("Test resume: [Oshiri Tantei](%s)" % url)
 passThreshold = st.slider('Matching Threshold', 0, 100, 50)
 
