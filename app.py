@@ -3,10 +3,10 @@ import PyPDF2
 import pdfplumber
 import string
 import re
+import time
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from PIL import Image
-
 
 image = Image.open('static/ass.png')
 
@@ -60,32 +60,24 @@ Doc Screening
 uploadedResumes = st.file_uploader("Resumes",type="pdf", accept_multiple_files=True)
 url = "https://github.com/gancim/ass/raw/main/static/oshiritantei.pdf"
 st.caption("Test resume: [Oshiri Tantei](%s)" % url)
+
 passThreshold = st.slider('Matching Threshold', 0, 100, 50)
+
+click = st.button('Analyze')
 
 # normalization
 def normalize(text):
     # Convert all strings to lowercase
     all_text = text.lower()
-
     # Remove numbers
     all_text = re.sub(r'\d+','',all_text)
-
     # Remove punctuation
     all_text = all_text.translate(str.maketrans('','',string.punctuation))
 
     return all_text
 
-try:
-    global job_description
-    all_text = job_description_txt
-
-    job_description = normalize(all_text)
-
-except:
-    st.write("")
-
-try:
-    global resumes
+# get Resumes
+def getResumes():
     resumes = {}
     all_text = ""
     for uploadedResume in uploadedResumes:
@@ -98,15 +90,13 @@ try:
 
         resumes[uploadedResume.name] = resume
 
-except:
-    st.write("")
+    return resumes
 
 #logic
 def getResult(JD_txt,resume_txt):
     content = [JD_txt,resume_txt]
 
     cv = CountVectorizer()
-
     matrix = cv.fit_transform(content)
     similarity_matrix = cosine_similarity(matrix)
     match = similarity_matrix[0][1] * 100
@@ -114,41 +104,52 @@ def getResult(JD_txt,resume_txt):
     return match
 
 #button
-if st.button('Analyze'):
+if click:
     st.header('Results')
-    csv = []
+    with st.spinner('Wait for it...'):
+        csv = []
 
-    total_resumes = len(resumes.keys())
-    total_pass = 0
+        try:
+            job_description = normalize(job_description_txt)
+        except:
+            st.error("Error parsing Job Description")
 
-    head1, head2 = st.columns(2)
-    head1.metric("Pass Threshold", str(passThreshold) + "%")
-    head2.metric("Total Resumes", str(total_resumes))
-    st.write("----")
+        try:
+            resumes = getResumes()
+        except:
+            st.error("Error parsing Resumes")
 
-    for resume_name in resumes.keys():
+        total_resumes = len(resumes.keys())
+        total_pass = 0
 
-        match = getResult(job_description, resumes[resume_name])
-        match = round(match)
+        head1, head2 = st.columns(2)
+        head1.metric("Pass Threshold", str(passThreshold) + "%")
+        head2.metric("Total Resumes", str(total_resumes))
+        st.write("----")
 
-        col1, col2, col3 = st.columns(3)
-        col1.caption(resume_name)
-        col2.metric("Matching Percentage", str(match) + "%", str(match - passThreshold) + "%")
+        for resume_name in resumes.keys():
 
-        isPass = match >= passThreshold
-        if (isPass):
-            col3.success("Pass! :thumbsup:")
-            total_pass += 1
-        else:
-            col3.error("Fail! :thumbsdown:")
-        csv.append(resume_name + ", " + str(match) + ", "+ str(match - passThreshold) + ", "+ str(isPass))
+            match = getResult(job_description, resumes[resume_name])
+            match = round(match)
 
-    st.write("----")
-    total_pass_percentage = round((total_pass / total_resumes) * 100)
-    tot1, tot2 = st.columns(2)
-    tot1.metric("Pass", str(total_pass), str(total_pass_percentage) + "%")
-    tot2.metric("Fail", str(total_resumes - total_pass), str((total_pass_percentage - 100)) + "%")
+            col1, col2, col3 = st.columns(3)
+            col1.caption(resume_name)
+            col2.metric("Matching Percentage", str(match) + "%", str(match - passThreshold) + "%")
 
-    st.write("----")
-    with st.expander("Export"):
-        st.write(csv)
+            isPass = match >= passThreshold
+            if (isPass):
+                col3.success("Pass! :thumbsup:")
+                total_pass += 1
+            else:
+                col3.error("Fail! :thumbsdown:")
+            csv.append(resume_name + ", " + str(match) + ", "+ str(match - passThreshold) + ", "+ str(isPass))
+
+        st.write("----")
+        total_pass_percentage = round((total_pass / total_resumes) * 100)
+        tot1, tot2 = st.columns(2)
+        tot1.metric("Pass", str(total_pass), str(total_pass_percentage) + "%")
+        tot2.metric("Fail", str(total_resumes - total_pass), str((total_pass_percentage - 100)) + "%")
+
+        st.write("----")
+        with st.expander("Export"):
+            st.write(csv)
